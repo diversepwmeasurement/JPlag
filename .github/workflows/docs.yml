@@ -1,36 +1,30 @@
-name: Documentation
-
-on:
-  push:
-    branches:
-      - main
-    tags: "v**"
-    paths:
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
-  workflow_dispatch:
-
 jobs:
   docs:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.SDQ_DEV_DEPLOY_TOKEN }}
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository }}.wiki
-          path: wiki
-          token: ${{ secrets.SDQ_DEV_DEPLOY_TOKEN }}
-
-      - name: Remove contents in Wiki
-        working-directory: wiki
-        run: ls -A1 | grep -v '.git' | xargs rm -r
-
-      - name: Copy Wiki from Docs folder
-        run: cp -r ./docs/. ./wiki
-
-      - name: Deploy 🚀
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          repository: wiki
+    - continue-on-error: true
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.SDQ_DEV_DEPLOY_TOKEN }}
+    - continue-on-error: true
+      uses: actions/checkout@v4
+      with:
+        path: wiki
+        repository: ${{ github.repository }}.wiki
+        token: ${{ secrets.SDQ_DEV_DEPLOY_TOKEN }}
+    - continue-on-error: true
+      name: Remove contents in Wiki
+      run: ls -A1 | grep -v '.git' | xargs rm -r
+      working-directory: wiki
+    - continue-on-error: true
+      name: Copy Wiki from Docs folder
+      run: cp -r ./docs/. ./wiki
+    - continue-on-error: true
+      name: "Deploy \U0001F680"
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        repository: wiki
+name: Documentation
+on:
+  repository_dispatch:
+    types: trigger-ga___docs.yml

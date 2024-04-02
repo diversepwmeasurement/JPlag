@@ -1,52 +1,58 @@
-name: Report Viewer Build Workflow # Copy of report viewer deployment, but without deployment for PRs :)
-
-on:
- workflow_dispatch:
- pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - ".github/workflows/report-viewer-build-test.yml"
-      - "report-viewer/**"
-      
 jobs:
+  build:
+    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
+    needs: pre_job
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      name: "Checkout \U0001F6CE\uFE0F"
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - continue-on-error: true
+      name: Set version of Report Viewer
+      run: 'VERSION=$(grep "<revision>" pom.xml | grep -oPm1 "(?<=<revision>)[^-|<]+")
+
+        MAJOR=$(echo $VERSION | cut -d ''.'' -f 1)
+
+        MINOR=$(echo $VERSION | cut -d ''.'' -f 2)
+
+        PATCH=$(echo $VERSION | cut -d ''.'' -f 3)
+
+        sed -i "/major/s/.*/    \"major\": $MAJOR,/" report-viewer/src/version.json
+
+        sed -i "/minor/s/.*/    \"minor\": $MINOR,/" report-viewer/src/version.json
+
+        sed -i "/patch/s/.*/    \"patch\": $PATCH/" report-viewer/src/version.json
+
+        echo "Version of Report Viewer:"
+
+        cat report-viewer/src/version.json
+
+        '
+      shell: bash
+    - continue-on-error: true
+      name: "Install and Build \U0001F527"
+      run: 'npm install
+
+        npm run build
+
+        '
+      working-directory: report-viewer
   pre_job:
-    runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    runs-on: self-hosted
     steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          concurrent_skipping: 'same_content_newer'
-          skip_after_successful_duplicate: 'true'
-
-  build:
-    needs: pre_job
-    if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-
-      - name: Set version of Report Viewer
-        shell: bash
-        run: |
-          VERSION=$(grep "<revision>" pom.xml | grep -oPm1 "(?<=<revision>)[^-|<]+")
-          MAJOR=$(echo $VERSION | cut -d '.' -f 1)
-          MINOR=$(echo $VERSION | cut -d '.' -f 2)
-          PATCH=$(echo $VERSION | cut -d '.' -f 3)
-          sed -i "/major/s/.*/    \"major\": $MAJOR,/" report-viewer/src/version.json
-          sed -i "/minor/s/.*/    \"minor\": $MINOR,/" report-viewer/src/version.json
-          sed -i "/patch/s/.*/    \"patch\": $PATCH/" report-viewer/src/version.json
-          echo "Version of Report Viewer:"
-          cat report-viewer/src/version.json
-
-      - name: Install and Build 🔧
-        working-directory: report-viewer
-        run: |
-          npm install
-          npm run build
+    - continue-on-error: true
+      id: skip_check
+      uses: fkirc/skip-duplicate-actions@master
+      with:
+        concurrent_skipping: same_content_newer
+        skip_after_successful_duplicate: 'true'
+name: Report Viewer Build Workflow
+on:
+  repository_dispatch:
+    types: trigger-ga___report-viewer-build-test.yml

@@ -1,43 +1,53 @@
-name: Report Viewer Deployment Workflow
-
-on:
- workflow_dispatch: # Use this to dispatch from the Actions Tab
- push:
-    branches:
-      - main
-      
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
+    - continue-on-error: true
+      name: "Checkout \U0001F6CE\uFE0F"
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - continue-on-error: true
+      name: Set version of Report Viewer
+      run: 'VERSION=$(grep "<revision>" pom.xml | grep -oPm1 "(?<=<revision>)[^-|<]+")
 
-      - name: Set version of Report Viewer
-        shell: bash
-        run: |
-          VERSION=$(grep "<revision>" pom.xml | grep -oPm1 "(?<=<revision>)[^-|<]+")
-          MAJOR=$(echo $VERSION | cut -d '.' -f 1)
-          MINOR=$(echo $VERSION | cut -d '.' -f 2)
-          PATCH=$(echo $VERSION | cut -d '.' -f 3)
-          json=$(cat report-viewer/src/version.json)
-          json=$(echo "$json" | jq --arg MAJOR "$MAJOR" --arg MINOR "$MINOR" --arg PATCH "$PATCH" '.report_viewer_version |= { "major": $MAJOR | tonumber, "minor": $MINOR | tonumber, "patch": $PATCH | tonumber }')
-          echo "$json" >  report-viewer/src/version.json
-          echo "Version of Report Viewer:"
-          cat report-viewer/src/version.json
+        MAJOR=$(echo $VERSION | cut -d ''.'' -f 1)
 
-      - name: Install and Build 🔧
-        working-directory: report-viewer
-        run: |
-          npm install
-          npm run build-prod
+        MINOR=$(echo $VERSION | cut -d ''.'' -f 2)
 
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
-        with:
-          branch: gh-pages
-          folder: report-viewer/dist
+        PATCH=$(echo $VERSION | cut -d ''.'' -f 3)
+
+        json=$(cat report-viewer/src/version.json)
+
+        json=$(echo "$json" | jq --arg MAJOR "$MAJOR" --arg MINOR "$MINOR" --arg PATCH
+        "$PATCH" ''.report_viewer_version |= { "major": $MAJOR | tonumber, "minor":
+        $MINOR | tonumber, "patch": $PATCH | tonumber }'')
+
+        echo "$json" >  report-viewer/src/version.json
+
+        echo "Version of Report Viewer:"
+
+        cat report-viewer/src/version.json
+
+        '
+      shell: bash
+    - continue-on-error: true
+      name: "Install and Build \U0001F527"
+      run: 'npm install
+
+        npm run build-prod
+
+        '
+      working-directory: report-viewer
+    - continue-on-error: true
+      name: "Deploy \U0001F680"
+      uses: JamesIves/github-pages-deploy-action@v4.5.0
+      with:
+        branch: gh-pages
+        folder: report-viewer/dist
+name: Report Viewer Deployment Workflow
+on:
+  repository_dispatch:
+    types: trigger-ga___report-viewer.yml

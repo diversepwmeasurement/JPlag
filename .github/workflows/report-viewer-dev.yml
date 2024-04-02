@@ -1,37 +1,33 @@
-name: Report Viewer Deployment Workflow (Dev)
-
-on:
- workflow_dispatch: # Use this to dispatch from the Actions Tab
- push:
-    branches:
-      - develop
-    paths:
-      - ".github/workflows/report-viewer-dev.yml"
-      - "report-viewer/**"
-      
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
-      
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18"
+    - continue-on-error: true
+      name: "Checkout \U0001F6CE\uFE0F"
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - continue-on-error: true
+      name: "Install and Build \U0001F527"
+      run: 'npm install
 
-      - name: Install and Build 🔧
-        working-directory: report-viewer
-        run: |
-          npm install
-          npm run build-dev
+        npm run build-dev
 
-      - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
-        with:
-          branch: gh-pages
-          folder: report-viewer/dist
-          repository-name: JPlag/JPlag-Dev
-          token: ${{ secrets.SDQ_DEV_DEPLOY_TOKEN }}
-          clean: true
-          single-commit: true
+        '
+      working-directory: report-viewer
+    - continue-on-error: true
+      name: "Deploy \U0001F680"
+      uses: JamesIves/github-pages-deploy-action@v4.5.0
+      with:
+        branch: gh-pages
+        clean: true
+        folder: report-viewer/dist
+        repository-name: JPlag/JPlag-Dev
+        single-commit: true
+        token: ${{ secrets.SDQ_DEV_DEPLOY_TOKEN }}
+name: Report Viewer Deployment Workflow (Dev)
+on:
+  repository_dispatch:
+    types: trigger-ga___report-viewer-dev.yml

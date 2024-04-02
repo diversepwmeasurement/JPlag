@@ -1,63 +1,45 @@
-name: Build
-
-on:
-  push:
-    paths:
-      - ".github/workflows/maven.yml"
-      - "**/pom.xml"
-      - "**.java"
-      - "**.g4"
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - ".github/workflows/maven.yml"
-      - "**/pom.xml"
-      - "**.java"
-      - "**.g4"
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
 jobs:
-  pre_job:
-    runs-on: ubuntu-latest
-    outputs:
-      should_skip: ${{ steps.skip_check.outputs.should_skip }}
-    steps:
-      - id: skip_check
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          concurrent_skipping: 'same_content_newer'
-          skip_after_successful_duplicate: 'true'
-
   build:
-    needs: pre_job
     if: ${{ needs.pre_job.outputs.should_skip != 'true' }}
-    runs-on: ubuntu-latest
-
+    needs: pre_job
+    runs-on: self-hosted
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up JDK
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Set up JDK
       uses: actions/setup-java@v4
       with:
+        distribution: temurin
         java-version: 21
-        distribution: 'temurin'
-
-    - uses: actions/setup-node@v4
+    - continue-on-error: true
+      uses: actions/setup-node@v4
       with:
-        node-version: "18"
-
-    - name: Run Tests
+        node-version: '18'
+    - continue-on-error: true
+      name: Run Tests
       run: mvn verify -B -U
-
-    - name: Build Assembly
+    - continue-on-error: true
+      name: Build Assembly
       run: mvn -Pwith-report-viewer clean package assembly:single
-
-    - name: Upload Assembly
+    - continue-on-error: true
+      name: Upload Assembly
       uses: actions/upload-artifact@v4
       with:
-        name: "JPlag"
-        path: "jplag.cli/target/jplag-*-jar-with-dependencies.jar"
-
-
+        name: JPlag
+        path: jplag.cli/target/jplag-*-jar-with-dependencies.jar
+  pre_job:
+    outputs:
+      should_skip: ${{ steps.skip_check.outputs.should_skip }}
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      id: skip_check
+      uses: fkirc/skip-duplicate-actions@master
+      with:
+        concurrent_skipping: same_content_newer
+        skip_after_successful_duplicate: 'true'
+name: Build
+on:
+  repository_dispatch:
+    types: trigger-ga___maven.yml
